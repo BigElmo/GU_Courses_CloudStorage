@@ -7,7 +7,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -40,14 +39,21 @@ public class Server {
 
                 if (selectionKey.isReadable()) {
                     System.out.println("New selector readable event");
-                    readMessage(selectionKey);
-                    String echo = "echo: ";
-                    SocketChannel client = (SocketChannel) selectionKey.channel();
-                    client.write(ByteBuffer.wrap(echo.getBytes()));
+                    String message = readMessage(selectionKey);
+                    if (selectionKey.channel().isOpen()) {
+                        writeMessage(selectionKey, message);
+                    }
                 }
                 iterator.remove();
             }
         }
+    }
+
+    private void writeMessage(SelectionKey selectionKey, String message) throws IOException {
+        SocketChannel client = (SocketChannel) selectionKey.channel();
+        String out = "echo: " + message;
+        ByteBuffer byteBuffer = ByteBuffer.wrap(out.getBytes());
+        client.write(byteBuffer);
     }
 
     public void register(Selector selector, ServerSocketChannel serverSocket) throws IOException {
@@ -57,11 +63,19 @@ public class Server {
         System.out.println("New client is connected");
     }
 
-    public void readMessage(SelectionKey key) throws IOException {
-        SocketChannel client = (SocketChannel) key.channel();
+    public String readMessage(SelectionKey selectionKey) throws IOException {
+        SocketChannel client = (SocketChannel) selectionKey.channel();
         ByteBuffer byteBuffer = ByteBuffer.allocate(256);
-        client.read(byteBuffer);
-        String message = new String(byteBuffer.array());
-        System.out.println("New message: " + message);
+        String message;
+        if (client.read(byteBuffer) < 0) {
+            selectionKey.cancel();
+            client.close();
+            message = "Socket closed";
+            System.out.println(message);
+        } else {
+            message = new String(byteBuffer.array());
+            System.out.println("New message: " + message);
+        }
+        return message;
     }
 }
