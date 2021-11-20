@@ -24,15 +24,18 @@ public class Client {
     public void start() throws IOException {
         SocketChannel channel = SocketChannel.open(new InetSocketAddress("localhost", 9000));
         System.out.println("New client started");
+        ByteBuffer buffer = ByteBuffer.allocate(256);
+        Scanner scanner = new Scanner(System.in);
 
         THREAD_POOL.execute(() -> {
             try {
-                Scanner scanner = new Scanner(System.in);
                 while (true) {
                     String message = scanner.nextLine();
                     if (channel.isOpen()) {
-                        ByteBuffer byteBuffer = ByteBuffer.wrap(message.getBytes());
-                        channel.write(byteBuffer);
+                        buffer.put(message.getBytes());
+                        buffer.flip();
+                        channel.write(buffer);
+                        buffer.clear();
                     } else {
                         System.out.println("Socket closed");
                     }
@@ -45,10 +48,16 @@ public class Client {
         THREAD_POOL.execute(() -> {
             try {
                 while (true) {
-                    ByteBuffer byteBuffer = ByteBuffer.allocate(256);
-                    channel.read(byteBuffer);
-                    String message = new String(byteBuffer.array());
-                    System.out.println(message);
+                    if (channel.read(buffer) < 0) {
+                        channel.close();
+                        System.out.println("Socket closed");
+                    } else {
+                        buffer.flip();
+                        byte[] byteArr = new byte[buffer.remaining()];
+                        buffer.get(byteArr);
+                        buffer.clear();
+                        System.out.println(new String(byteArr));
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
