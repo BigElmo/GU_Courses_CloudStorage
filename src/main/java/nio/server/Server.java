@@ -41,7 +41,7 @@ public class Server {
                     System.out.println("New selector readable event");
                     String message = readMessage(selectionKey, buffer);
                     if (selectionKey.channel().isOpen()) {
-                        echoMessage(selectionKey, message, buffer);
+                        echoMessage(selectionKey, message);
                     }
                 }
                 iterator.remove();
@@ -49,13 +49,11 @@ public class Server {
         }
     }
 
-    private void echoMessage(SelectionKey selectionKey, String message, ByteBuffer buffer) throws IOException {
+    private void echoMessage(SelectionKey selectionKey, String message) throws IOException {
         SocketChannel client = (SocketChannel) selectionKey.channel();
         String echo = "echo: " + message;
-        buffer.put(echo.getBytes());
-        buffer.flip();
-        client.write(buffer);
-        buffer.clear();
+        ByteBuffer outBuffer = ByteBuffer.wrap(echo.getBytes());
+        client.write(outBuffer);
     }
 
     public void register(Selector selector, ServerSocketChannel serverSocket) throws IOException {

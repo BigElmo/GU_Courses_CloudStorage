@@ -32,10 +32,8 @@ public class Client {
                 while (true) {
                     String message = scanner.nextLine();
                     if (channel.isOpen()) {
-                        buffer.put(message.getBytes());
-                        buffer.flip();
-                        channel.write(buffer);
-                        buffer.clear();
+                        ByteBuffer outBuffer = ByteBuffer.wrap(message.getBytes());
+                        channel.write(outBuffer);
                     } else {
                         System.out.println("Socket closed");
                     }
