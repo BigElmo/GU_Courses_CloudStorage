@@ -1,22 +1,13 @@
 package netty.client;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
 
-import java.util.Date;
+public class ClientHandler extends SimpleChannelInboundHandler<String> {
 
-public class ClientHandler extends ChannelInboundHandlerAdapter {
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        ByteBuf m = (ByteBuf) msg;
-        try {
-            long currentTimeMillis = (m.readUnsignedInt() - 2208988800L) * 1000L;
-            System.out.println(new Date(currentTimeMillis));
-            ctx.close();
-        } finally {
-            m.release();
-        }
+    protected void channelRead0(ChannelHandlerContext ctx, String s) {
+        System.out.println(s);
     }
 
     @Override

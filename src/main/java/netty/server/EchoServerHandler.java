@@ -1,14 +1,14 @@
 package netty.server;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.util.ReferenceCountUtil;
+import io.netty.channel.SimpleChannelInboundHandler;
 
-public class EchoServerHandler extends ChannelInboundHandlerAdapter {
+public class EchoServerHandler extends SimpleChannelInboundHandler<String> {
+
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) {
         System.out.println("New client is registered");
+        ctx.writeAndFlush("Welcome to echo server. Type exit to break connection.");
     }
 
     @Override
@@ -27,23 +27,9 @@ public class EchoServerHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        ByteBuf in = (ByteBuf) msg;
-        try {
-            while (in.isReadable()) {
-                char c = (char) in.readByte();
-                if (c == 'q') {
-                    ctx.close();
-                }
-                ctx.write(msg);
-                System.out.print(c);
-                System.out.flush();
-                ctx.flush();
-            }
-        } finally {
-            ReferenceCountUtil.release(msg);
-        }
-
+    protected void channelRead0(ChannelHandlerContext ctx, String s) {
+        System.out.println("New message from client: " + s);
+        ctx.writeAndFlush("Echo: " + s);
     }
 
     @Override
